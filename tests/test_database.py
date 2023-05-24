@@ -15,6 +15,7 @@ from xml.etree import ElementTree
 import timeit
 
 import cantools.autosar
+import cantools.database.conversion as conversion
 from cantools.database.utils import prune_signal_choices, sort_choices_by_value, sort_signals_by_name
 
 try:
@@ -92,6 +93,15 @@ class CanToolsDatabaseTest(unittest.TestCase):
 
         self.assertEqual(i, 15)
         self.assert_dbc_dump(db, filename)
+
+    def test_signal_scaled_initial(self):
+        conv = conversion.LinearIntegerConversion(5, 2)
+        s = cantools.db.Signal('foo', 0, 8, conversion=conv, raw_initial=1)
+        self.assertEqual(s.initial, 7)
+        s = cantools.db.Signal('foo', 0, 8, conversion=conv, scaled_initial=5)
+        self.assertEqual(s.initial, 5)
+        with self.assertRaises(ValueError):
+            cantools.db.Signal('foo', 0, 8, raw_initial=1, scaled_initial=5)
 
     def test_dbc_signal_initial_value(self):
         filename = 'tests/files/dbc/vehicle.dbc'

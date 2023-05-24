@@ -125,6 +125,7 @@ class Signal:
         is_signed: bool = False,
         raw_initial: Optional[Union[int, float]] = None,
         raw_invalid: Optional[Union[int, float]] = None,
+        scaled_initial: Optional[Union[int, float, str]] = None,
         conversion: BaseConversion = IdentityConversion(is_float=False),
         minimum: Optional[float] = None,
         maximum: Optional[float] = None,
@@ -139,6 +140,9 @@ class Signal:
         spn: Optional[int] = None,
     ) -> None:
         # avoid using properties to improve encoding/decoding performance
+
+        if scaled_initial is not None and raw_initial is not None:
+            raise ValueError('cannot pass both scaled_initial= and raw_initial=')
 
         #: The signal name as a string.
         self.name: str = name
@@ -172,9 +176,13 @@ class Signal:
 
         #: The initial value of the signal in units of the physical world,
         #: or ``None`` if unavailable.
-        self.initial: Optional[SignalValueType] = (
-            self.conversion.raw_to_scaled(raw_initial) if raw_initial is not None else None
-        )
+        self.initial: Optional[SignalValueType]
+        if raw_initial is not None:
+            self.initial = self.conversion.raw_to_scaled(raw_initial)
+        elif scaled_initial is not None:
+            self.initial = scaled_initial
+        else:
+            self.initial = None
 
         #: The raw value representing that the signal is invalid,
         #: or ``None`` if unavailable.
